@@ -246,19 +246,15 @@ string encrypt(double num)
     size_t slot_count = encoder.slot_count();
 
     vector<double> input{ num, 1.1, 2.2, 3.3 };
-    cout << "Input vector: " << endl;
 
     Plaintext plain;
     double scale = pow(2.0, 30);
-    print_line(__LINE__);
-    cout << "Encode input vector." << endl;
+
     encoder.encode(input, scale, plain);
 
     vector<double> output;
 
     Ciphertext encrypted;
-    print_line(__LINE__);
-    cout << "Encrypt input vector, square, and relinearize." << endl;
     encryptor.encrypt(plain, encrypted);
     stringstream ss;
     encrypted.save(ss);
@@ -307,24 +303,35 @@ double decrypt(string e)
     stringstream ss = stringstream(e);
     encrypted.load(context, ss);
 
-    print_line(__LINE__);
-    cout << "Decrypt and decode." << endl;
     decryptor.decrypt(encrypted, plain);
     encoder.decode(plain, output);
    
     return output[0];
 
-
-
  }
 
-     int main()
-{
+     int main(int argv, char **argc)
+{      
+          if (argc[1][0] == 'd')
+         {
+              std::string s(argc[2]);
 
-      string e = encrypt(100);
+              cout << decrypt(s) << endl;
+          }
+          else
+          {
+              std::string s(argc[2]);
+
+              double num = std::stod(s);
+              cout << encrypt(num) << endl;
+
+          }
+         /*
+         string e = encrypt(100);
       cout << e << endl;
       double d = decrypt(e);
       cout << d << endl;
+      */
          
     
   

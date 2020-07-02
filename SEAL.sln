@@ -9,7 +9,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SEALTest", "native\tests\SE
 		{7EA96C25-FC0D-485A-BB71-32B6DA55652A} = {7EA96C25-FC0D-485A-BB71-32B6DA55652A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SEALExamples", "native\examples\SEALExamples.vcxproj", "{2B57D847-26DC-45FF-B9AF-EE33910B5093}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EncryptDecrypt", "native\examples\SEALExamples.vcxproj", "{2B57D847-26DC-45FF-B9AF-EE33910B5093}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7EA96C25-FC0D-485A-BB71-32B6DA55652A} = {7EA96C25-FC0D-485A-BB71-32B6DA55652A}
 	EndProjectSection
@@ -94,11 +94,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{
 		pipelines\windows.yml = pipelines\windows.yml
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Encrypter", "native\Encrypter\Encrypter.vcxproj", "{25070CD4-9930-4A57-9210-BE35995E53FB}"
-	ProjectSection(ProjectDependencies) = postProject
-		{7EA96C25-FC0D-485A-BB71-32B6DA55652A} = {7EA96C25-FC0D-485A-BB71-32B6DA55652A}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -163,14 +158,6 @@ Global
 		{18DA9F90-3131-461A-A3E8-40AC0B1D7632}.Release|Win32.Build.0 = Release|Any CPU
 		{18DA9F90-3131-461A-A3E8-40AC0B1D7632}.Release|x64.ActiveCfg = Release|Any CPU
 		{18DA9F90-3131-461A-A3E8-40AC0B1D7632}.Release|x64.Build.0 = Release|Any CPU
-		{25070CD4-9930-4A57-9210-BE35995E53FB}.Debug|Win32.ActiveCfg = Debug|Win32
-		{25070CD4-9930-4A57-9210-BE35995E53FB}.Debug|Win32.Build.0 = Debug|Win32
-		{25070CD4-9930-4A57-9210-BE35995E53FB}.Debug|x64.ActiveCfg = Debug|x64
-		{25070CD4-9930-4A57-9210-BE35995E53FB}.Debug|x64.Build.0 = Debug|x64
-		{25070CD4-9930-4A57-9210-BE35995E53FB}.Release|Win32.ActiveCfg = Release|Win32
-		{25070CD4-9930-4A57-9210-BE35995E53FB}.Release|Win32.Build.0 = Release|Win32
-		{25070CD4-9930-4A57-9210-BE35995E53FB}.Release|x64.ActiveCfg = Release|x64
-		{25070CD4-9930-4A57-9210-BE35995E53FB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -190,7 +177,6 @@ Global
 		{0DD76E94-59E1-49D4-9ED7-8C696B89F26E} = {6B00D0DE-8A17-44B8-BF47-F372E9189434}
 		{256C7291-7A4D-466A-BF88-535B541D2CAC} = {C73A600E-7F50-467C-9228-58AC2C1A7DDA}
 		{03B08661-29E2-4806-9F10-F1B7013D717D} = {C73A600E-7F50-467C-9228-58AC2C1A7DDA}
-		{25070CD4-9930-4A57-9210-BE35995E53FB} = {A5BADDF0-1F03-48FE-AAC0-3355614C9A8D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {15A17F22-F747-4B82-BF5F-E0224AF4B3ED}
