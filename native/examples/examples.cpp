@@ -130,95 +130,166 @@ inline void print_vector(std::vector<T> vec, std::size_t print_size = 4, int pre
     */
     std::cout.copyfmt(old_fmt);
 }
-static std::string Encode(const std::string data)
+#include <cstring>
+#include <sstream>
+
+/* aaaack but it's fast and const should make it shared text page. */
+static const unsigned char pr2six[256] = {
+    /* ASCII table */
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 64, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
+    64, 64, 64, 64, 64, 64, 64, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 64, 64, 64, 64, 64, 64, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
+    45, 46, 47, 48, 49, 50, 51, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+    64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64
+};
+
+int Base64decode_len(const char *bufcoded)
 {
-    static constexpr char sEncodingTable[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-                                               'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-                                               'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-                                               'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-                                               '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/' };
+    int nbytesdecoded;
+    const unsigned char *bufin;
+    int nprbytes;
 
-    size_t in_len = data.size();
-    size_t out_len = 4 * ((in_len + 2) / 3);
-    std::string ret(out_len, '\0');
-    size_t i;
-    char *p = const_cast<char *>(ret.c_str());
+    bufin = (const unsigned char *)bufcoded;
+    while (pr2six[*(bufin++)] <= 63)
+        ;
 
-    for (i = 0; i < in_len - 2; i += 3)
+    nprbytes = (bufin - (const unsigned char *)bufcoded) - 1;
+    nbytesdecoded = ((nprbytes + 3) / 4) * 3;
+
+    return nbytesdecoded + 1;
+}
+
+int Base64decode(char *bufplain, const char *bufcoded)
+{
+    int nbytesdecoded;
+    const unsigned char *bufin;
+    unsigned char *bufout;
+    int nprbytes;
+
+    bufin = (const unsigned char *)bufcoded;
+    while (pr2six[*(bufin++)] <= 63)
+        ;
+    nprbytes = (bufin - (const unsigned char *)bufcoded) - 1;
+    nbytesdecoded = ((nprbytes + 3) / 4) * 3;
+
+    bufout = (unsigned char *)bufplain;
+    bufin = (const unsigned char *)bufcoded;
+
+    while (nprbytes > 4)
     {
-        *p++ = sEncodingTable[(data[i] >> 2) & 0x3F];
-        *p++ = sEncodingTable[((data[i] & 0x3) << 4) | ((int)(data[i + 1] & 0xF0) >> 4)];
-        *p++ = sEncodingTable[((data[i + 1] & 0xF) << 2) | ((int)(data[i + 2] & 0xC0) >> 6)];
-        *p++ = sEncodingTable[data[i + 2] & 0x3F];
+        *(bufout++) = (unsigned char)(pr2six[*bufin] << 2 | pr2six[bufin[1]] >> 4);
+        *(bufout++) = (unsigned char)(pr2six[bufin[1]] << 4 | pr2six[bufin[2]] >> 2);
+        *(bufout++) = (unsigned char)(pr2six[bufin[2]] << 6 | pr2six[bufin[3]]);
+        bufin += 4;
+        nprbytes -= 4;
     }
-    if (i < in_len)
+
+    /* Note: (nprbytes == 1) would be an error, so just ingore that case */
+    if (nprbytes > 1)
     {
-        *p++ = sEncodingTable[(data[i] >> 2) & 0x3F];
-        if (i == (in_len - 1))
+        *(bufout++) = (unsigned char)(pr2six[*bufin] << 2 | pr2six[bufin[1]] >> 4);
+    }
+    if (nprbytes > 2)
+    {
+        *(bufout++) = (unsigned char)(pr2six[bufin[1]] << 4 | pr2six[bufin[2]] >> 2);
+    }
+    if (nprbytes > 3)
+    {
+        *(bufout++) = (unsigned char)(pr2six[bufin[2]] << 6 | pr2six[bufin[3]]);
+    }
+
+    *(bufout++) = '\0';
+    nbytesdecoded -= (4 - nprbytes) & 3;
+    return nbytesdecoded;
+}
+
+static const char basis_64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+int Base64encode_len(int len)
+{
+    return ((len + 2) / 3 * 4) + 1;
+}
+
+int Base64encode(char *encoded, const char *string, int len)
+{
+    int i;
+    char *p;
+
+    p = encoded;
+    for (i = 0; i < len - 2; i += 3)
+    {
+        *p++ = basis_64[(string[i] >> 2) & 0x3F];
+        *p++ = basis_64[((string[i] & 0x3) << 4) | ((string[i + 1] & 0xF0) >> 4)];
+        *p++ = basis_64[((string[i + 1] & 0xF) << 2) | ((string[i + 2] & 0xC0) >> 6)];
+        *p++ = basis_64[string[i + 2] & 0x3F];
+    }
+    if (i < len)
+    {
+        *p++ = basis_64[(string[i] >> 2) & 0x3F];
+        if (i == (len - 1))
         {
-            *p++ = sEncodingTable[((data[i] & 0x3) << 4)];
+            *p++ = basis_64[((string[i] & 0x3) << 4)];
             *p++ = '=';
         }
         else
         {
-            *p++ = sEncodingTable[((data[i] & 0x3) << 4) | ((int)(data[i + 1] & 0xF0) >> 4)];
-            *p++ = sEncodingTable[((data[i + 1] & 0xF) << 2)];
+            *p++ = basis_64[((string[i] & 0x3) << 4) | ((string[i + 1] & 0xF0) >> 4)];
+            *p++ = basis_64[((string[i + 1] & 0xF) << 2)];
         }
         *p++ = '=';
     }
 
-    return ret;
+    *p++ = '\0';
+    return p - encoded;
 }
 
-static std::string Decode(const std::string &input, std::string &out)
-{
-    static constexpr unsigned char kDecodingTable[] = {
-        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 62, 64, 64, 64, 63, 52, 53, 54, 55,
-        56, 57, 58, 59, 60, 61, 64, 64, 64, 64, 64, 64, 64, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
-        13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 64, 64, 64, 64, 64, 64, 26, 27, 28, 29, 30, 31, 32,
-        33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 64, 64, 64, 64, 64, 64, 64,
-        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-        64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64
-    };
 
-    size_t in_len = input.size();
-    if (in_len % 4 != 0)
-        return "Input data size is not a multiple of 4";
-
-    size_t out_len = in_len / 4 * 3;
-    if (input[in_len - 1] == '=')
-        out_len--;
-    if (input[in_len - 2] == '=')
-        out_len--;
-
-    out.resize(out_len);
-
-    for (size_t i = 0, j = 0; i < in_len;)
+    std::string encode(const std::string &s)
     {
-        uint32_t a = input[i] == '=' ? 0 & i++ : kDecodingTable[static_cast<int>(input[i++])];
-        uint32_t b = input[i] == '=' ? 0 & i++ : kDecodingTable[static_cast<int>(input[i++])];
-        uint32_t c = input[i] == '=' ? 0 & i++ : kDecodingTable[static_cast<int>(input[i++])];
-        uint32_t d = input[i] == '=' ? 0 & i++ : kDecodingTable[static_cast<int>(input[i++])];
+        // make C char* buffer to store the encoded output (for compatibility)
+        int len = Base64encode_len(s.length());
+        char *buf = (char *)malloc(len);
+        memset(buf, 0, len);
+        Base64encode(buf, s.c_str(), s.length());
 
-        uint32_t triple = (a << 3 * 6) + (b << 2 * 6) + (c << 1 * 6) + (d << 0 * 6);
-
-        if (j < out_len)
-            out[j++] = (triple >> 2 * 8) & 0xFF;
-        if (j < out_len)
-            out[j++] = (triple >> 1 * 8) & 0xFF;
-        if (j < out_len)
-            out[j++] = (triple >> 0 * 8) & 0xFF;
+        // convert back into a C++ string, and return it
+        // (unlike below in decode(), I can just directly construct the C++
+        // string from the C one, because the Base64-encoded C string will
+        // not contain any intermediate null bytes by definition)
+        std::string result(buf);
+        free(buf);
+        return result;
     }
 
-    return "";
-}
-string encrypt(double num)
+    std::string decode(const std::string &s)
+    {
+        // convert into C string and decode into that char* buffer
+        const char *cstr = s.c_str();
+        int len = Base64decode_len(cstr);
+        char *buf = (char *)malloc(len);
+        memset(buf, 0, len);
+        Base64decode(buf, cstr);
+
+        // read bytes from that buffer into a C++ string
+        // (cannot just construct/assign C++ string from C char* buffer,
+        // because that will terminate the string at the first null \0 byte)
+        std::ostringstream out;
+        for (int i = 0; i < len; i++)
+        {
+            out << buf[i];
+        }
+        std::string result = out.str();
+
+        free(buf);
+        return result;
+    }
+    string encrypt(double num)
 {
-    random_seed_type secret_keyt = { 1, 2, 3, 4, 5, 6, 7, 8 };
+    random_seed_type secret_keyt = { 2, 2, 300, 4, 5, 6, 7, 8 };
 
     std::shared_ptr<UniformRandomGeneratorFactory> rg = make_shared<BlakePRNGFactory>(secret_keyt);
     EncryptionParameters parms(scheme_type::CKKS);
@@ -231,10 +302,28 @@ string encrypt(double num)
 
     stringstream public_ss;
     KeyGenerator keygen(context);
-    auto secret_key = keygen.secret_key();
-    auto public_key = keygen.public_key();
-    auto relin_keys = keygen.relin_keys_local();
+    auto secret_key_seed = keygen.secret_key();
 
+    
+
+    KeyGenerator keygen2(context, secret_key_seed);
+    auto secret_key = keygen2.secret_key();   
+    auto public_key = keygen2.public_key();
+
+     string filename = "key_public.txt";
+
+    ifstream ct;
+    ct.open(filename, ios::binary);
+
+    public_key.unsafe_load(context, ct);
+
+    filename = "key.txt";
+
+    ifstream ct2;
+    ct2.open(filename, ios::binary);
+    // fileSize("key.txt";
+
+    secret_key.load(context, ct2);
     /*
     We also set up an Encryptor, Evaluator, and Decryptor as usual.
     */
@@ -259,14 +348,28 @@ string encrypt(double num)
     stringstream ss;
     encrypted.save(ss);
 
-    return Encode(ss.str());
+    return encode(ss.str());
+    //return ss.str();
 }
+std::streampos fileSize(const char *filePath)
+{
+    std::streampos fsize = 0;
+    std::ifstream file(filePath, std::ios::binary);
+
+    fsize = file.tellg();
+    file.seekg(0, std::ios::end);
+    fsize = file.tellg() - fsize;
+    file.close();
+
+    return fsize;
+}
+
 double decrypt(string e)
 {
     string out;
-    e = Decode(e, out);
-    e = out;
-    random_seed_type secret_keyt = { 1, 2, 3, 4, 5, 6, 7, 8 };
+    e = decode(e);
+ 
+    random_seed_type secret_keyt = { 2, 2, 300, 4, 5, 6, 7, 8 };
 
     std::shared_ptr<UniformRandomGeneratorFactory> rg = make_shared<BlakePRNGFactory>(secret_keyt);
     EncryptionParameters parms(scheme_type::CKKS);
@@ -281,7 +384,24 @@ double decrypt(string e)
     KeyGenerator keygen(context);
     auto secret_key = keygen.secret_key();
     auto public_key = keygen.public_key();
-    auto relin_keys = keygen.relin_keys_local();
+
+  
+    string filename = "key_public.txt";
+    
+ ifstream ct;
+  ct.open(filename, ios::binary);
+
+    public_key.unsafe_load(context,ct);
+
+      filename = "key.txt";
+  
+
+    ifstream ct2;
+    ct2.open(filename, ios::binary);
+    //fileSize("key.txt"; 
+
+    secret_key.load(context, ct2);
+    
 
     /*
     We also set up an Encryptor, Evaluator, and Decryptor as usual.
@@ -311,11 +431,17 @@ double decrypt(string e)
  }
 
      int main(int argv, char **argc)
-{      
+ { 
+
           if (argc[1][0] == 'd')
          {
-              std::string s(argc[2]);
+             
+             fstream f(argc[2], fstream::in);
+             string s;
+             getline(f, s, '\0');
 
+             //cout << s << endl;
+             f.close();
               cout << decrypt(s) << endl;
           }
           else
@@ -326,10 +452,16 @@ double decrypt(string e)
               cout << encrypt(num) << endl;
 
           }
-         /*
-         string e = encrypt(100);
+      
+         /*string e = encrypt(100);
       cout << e << endl;
-      double d = decrypt(e);
+         double d = decrypt(e);
+         cout << d << endl;
+       e = encrypt(100);
+      cout << e << endl;
+
+
+       d = decrypt(e);
       cout << d << endl;
       */
          
