@@ -351,19 +351,36 @@ int Base64encode(char *encoded, const char *string, int len)
     return encode(ss.str());
     //return ss.str();
 }
-std::streampos fileSize(const char *filePath)
-{
-    std::streampos fsize = 0;
-    std::ifstream file(filePath, std::ios::binary);
 
-    fsize = file.tellg();
-    file.seekg(0, std::ios::end);
-    fsize = file.tellg() - fsize;
-    file.close();
+    void generate_key()
+    {
+        random_seed_type secret_keyt = { 2, 2, 300, 4, 5, 6, 7, 8 };
 
-    return fsize;
-}
+        std::shared_ptr<UniformRandomGeneratorFactory> rg = make_shared<BlakePRNGFactory>(secret_keyt);
+        EncryptionParameters parms(scheme_type::CKKS);
+        size_t poly_modulus_degree = 8192;
+        parms.set_poly_modulus_degree(poly_modulus_degree);
+        parms.set_coeff_modulus(CoeffModulus::Create(poly_modulus_degree, { 40, 40, 40, 40, 40 }));
 
+        parms.set_random_generator(rg);
+        auto context = SEALContext::Create(parms, false);
+
+        stringstream public_ss;
+        KeyGenerator keygen(context);
+        auto secret_key = keygen.secret_key();
+        auto public_key = keygen.public_key();
+
+        ofstream os;
+        os.open("key_public.txt", ios ::binary);
+        public_key.save(os);
+
+         ofstream os2;
+        os2.open("key.txt", ios ::binary);
+        secret_key.save(os2);
+
+
+
+    }
 double decrypt(string e)
 {
     string out;
@@ -384,10 +401,11 @@ double decrypt(string e)
     KeyGenerator keygen(context);
     auto secret_key = keygen.secret_key();
     auto public_key = keygen.public_key();
-
-  
     string filename = "key_public.txt";
     
+    ofstream os;
+    os.open("key_p.txt", ios ::binary);
+    secret_key.save(os);
  ifstream ct;
   ct.open(filename, ios::binary);
 
@@ -398,7 +416,6 @@ double decrypt(string e)
 
     ifstream ct2;
     ct2.open(filename, ios::binary);
-    //fileSize("key.txt"; 
 
     secret_key.load(context, ct2);
     
@@ -434,37 +451,27 @@ double decrypt(string e)
  { 
 
           if (argc[1][0] == 'd')
-         {
-             
-             fstream f(argc[2], fstream::in);
-             string s;
-             getline(f, s, '\0');
+     {
+         fstream f(argc[2], fstream::in);
+         string s;
+         getline(f, s, '\0');
 
-             //cout << s << endl;
-             f.close();
-              cout << decrypt(s) << endl;
-          }
-          else
+         // cout << s << endl;
+         f.close();
+         cout << decrypt(s) << endl;
+     }
+     else if (argc[1][0] == 'e')
+     {
+         std::string s(argc[2]);
+
+         double num = std::stod(s);
+         cout << encrypt(num) << endl;
+     }
+     else
           {
-              std::string s(argc[2]);
-
-              double num = std::stod(s);
-              cout << encrypt(num) << endl;
-
+         generate_key();
           }
-      
-         /*string e = encrypt(100);
-      cout << e << endl;
-         double d = decrypt(e);
-         cout << d << endl;
-       e = encrypt(100);
-      cout << e << endl;
-
-
-       d = decrypt(e);
-      cout << d << endl;
-      */
-         
+     
     
   
 

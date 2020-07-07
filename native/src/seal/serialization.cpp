@@ -378,7 +378,7 @@ namespace seal
 
             in_size = safe_cast<streamoff>(header.size);
         }
-        catch (const ios_base::failure &)
+        catch (const ios_base::failure f)
         {
             stream.exceptions(old_except_mask);
             expressive_rethrow_on_ios_base_failure(stream);
